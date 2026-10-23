@@ -1,5 +1,6 @@
 package com.example.nodrun.ui.screens
 
+import android.app.Application
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -11,7 +12,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.nodrun.viewmodel.NodRunViewModel
 
@@ -23,7 +26,11 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
 }
 
 @Composable
-fun MainScreen(viewModel: NodRunViewModel = viewModel()) {
+fun MainScreen() {
+    val application = LocalContext.current.applicationContext as Application
+    val viewModel: NodRunViewModel = viewModel(
+        factory = ViewModelProvider.AndroidViewModelFactory.getInstance(application)
+    )
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Chat) }
     val items = listOf(Screen.Chat, Screen.Workspace, Screen.Logs, Screen.Settings)
 
