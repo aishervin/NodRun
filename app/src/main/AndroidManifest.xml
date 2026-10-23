@@ -13,7 +13,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.NodRun">
         <activity
-            android:name=".MainActivity"
+            android:name="com.example.nodrun.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.NodRun">
             <intent-filter>

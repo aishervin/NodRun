@@ -112,14 +112,14 @@ MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /opt/gradle
 		ADDED from /app/applet/app/src/main/AndroidManifest.xml:9:9-35
 	android:theme
 		ADDED from /app/applet/app/src/main/AndroidManifest.xml:14:9-44
-activity#com.example.MainActivity
+activity#com.example.nodrun.MainActivity
 ADDED from /app/applet/app/src/main/AndroidManifest.xml:15:9-23:20
 	android:exported
 		ADDED from /app/applet/app/src/main/AndroidManifest.xml:17:13-36
 	android:theme
 		ADDED from /app/applet/app/src/main/AndroidManifest.xml:18:13-48
 	android:name
-		ADDED from /app/applet/app/src/main/AndroidManifest.xml:16:13-41
+		ADDED from /app/applet/app/src/main/AndroidManifest.xml:16:13-59
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
 ADDED from /app/applet/app/src/main/AndroidManifest.xml:19:13-22:29
 action#android.intent.action.MAIN
