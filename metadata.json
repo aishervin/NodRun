@@ -1,0 +1,6 @@
+{
+  "name": "NodRun",
+  "description": "Powerful Android AI core agent coder and workspace",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
