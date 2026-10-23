@@ -6,17 +6,24 @@ import java.io.File
 class WorkspaceManager(private val context: Context) {
     private val rootDir: File
         get() = File(context.filesDir, "nodrun_workspace").apply {
-            if (!exists()) {
-                mkdirs()
-                // Create sample files
-                File(this, "MainActivity.kt").writeText("package com.example.app\n\nfun main() {\n    println(\"Hello NodRun\")\n}")
-                File(this, "config.json").writeText("{\n  \"name\": \"NodRun Project\",\n  \"version\": \"1.0.0\"\n}")
+            try {
+                if (!exists()) {
+                    mkdirs()
+                    File(this, "MainActivity.kt").writeText("package com.example.app\n\nfun main() {\n    println(\"Hello NodRun\")\n}")
+                    File(this, "config.json").writeText("{\n  \"name\": \"NodRun Project\",\n  \"version\": \"1.0.0\"\n}")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
 
     fun listFiles(): List<WorkspaceFile> {
         val result = mutableListOf<WorkspaceFile>()
-        walkDirectory(rootDir, rootDir, result)
+        try {
+            walkDirectory(rootDir, rootDir, result)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
         return result
     }
 
@@ -30,7 +37,7 @@ class WorkspaceManager(private val context: Context) {
                     WorkspaceFile(
                         name = file.name,
                         path = relativePath,
-                        content = file.readText(),
+                        content = try { file.readText() } catch (e: Exception) { "" },
                         language = if (file.extension == "kt") "kotlin" else "text"
                     )
                 )
@@ -39,25 +46,33 @@ class WorkspaceManager(private val context: Context) {
     }
 
     fun saveFile(path: String, content: String) {
-        val file = File(rootDir, path)
-        if (!file.parentFile?.exists()!!) {
+        try {
+            val file = File(rootDir, path)
             file.parentFile?.mkdirs()
+            file.writeText(content)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-        file.writeText(content)
     }
 
     fun createFile(path: String, initialContent: String = "") {
-        val file = File(rootDir, path)
-        if (!file.parentFile?.exists()!!) {
+        try {
+            val file = File(rootDir, path)
             file.parentFile?.mkdirs()
+            file.writeText(initialContent)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-        file.writeText(initialContent)
     }
 
     fun deleteFile(path: String) {
-        val file = File(rootDir, path)
-        if (file.exists()) {
-            file.delete()
+        try {
+            val file = File(rootDir, path)
+            if (file.exists()) {
+                file.delete()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }

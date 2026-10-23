@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">NodRun</string>
-    <style name="Theme.NodRun" parent="android:Theme.Material.NoActionBar">
+    <style name="Theme.NodRun" parent="android:Theme.Material.Light.NoActionBar">
         
     </style>
 </resources>
