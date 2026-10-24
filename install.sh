@@ -31,19 +31,28 @@ fi
 printf 'Installing OpenCode server...\n'
 proot-distro login alpine -- sh -lc '
   set -e
-  apk add --no-cache ca-certificates nodejs npm gcompat libstdc++
-  if ! command -v opencode >/dev/null 2>&1; then
-    npm install -g opencode-ai
-  fi
-  opencode_package="$(npm root -g)/opencode-ai"
-  if [ ! -f "$opencode_package/postinstall.mjs" ]; then
-    printf 'OpenCode postinstall script not found at %s\n' "$opencode_package" >&2
-    exit 1
-  fi
-  printf 'Preparing OpenCode binary...\n'
-  (cd "$opencode_package" && node postinstall.mjs)
-  printf 'OpenCode binary version: '
-  "$opencode_package/bin/opencode.exe" --version
+  case "$(uname -m)" in
+    aarch64)
+      asset="opencode-linux-arm64-musl.tar.gz"
+      checksum="aa32a91f62cfddfa4615ba4deffc2b13696e77cbee83551824e3f16e6770b37e"
+      ;;
+    x86_64)
+      asset="opencode-linux-x64-musl.tar.gz"
+      checksum="265bd8027e84fe01837f72df8b7615d2959491f45569d52a21f2fcdbec9decdf"
+      ;;
+  esac
+  printf "Preparing standalone OpenCode binary...\n"
+  apk add --no-cache ca-certificates curl
+  work_dir="$(mktemp -d)"
+  archive="$work_dir/opencode.tar.gz"
+  curl -fsSL "https://github.com/anomalyco/opencode/releases/download/v1.19.4/$asset" -o "$archive"
+  printf "%s  %s\n" "$checksum" "$archive" | sha256sum -c -
+  tar -xzf "$archive" -C "$work_dir" opencode
+  mkdir -p /usr/local/bin
+  cp "$work_dir/opencode" /usr/local/bin/opencode
+  chmod 755 /usr/local/bin/opencode
+  /usr/local/bin/opencode --version
+  rm -r "$work_dir"
 '
 
 mkdir -p "$HOME/.config/opencode" "$HOME/.local/share/opencode"
@@ -54,4 +63,4 @@ exec proot-distro login alpine \
   --bind "$HOME:/root/workspace" \
   --bind "$HOME/.config/opencode:/root/.config/opencode" \
   --bind "$HOME/.local/share/opencode:/root/.local/share/opencode" \
-  -- sh -lc 'cd /root/workspace && exec "$(npm root -g)/opencode-ai/bin/opencode.exe" serve --hostname 127.0.0.1 --port 4096'
+  -- sh -lc 'cd /root/workspace && exec /usr/local/bin/opencode serve --hostname 127.0.0.1 --port 4096'
