@@ -1,0 +1,3 @@
+v0.4.16 - Persistent Android release signing
+
+Release APKs are now built with a dedicated, persistent signing key. Uninstall builds signed with the previous public debug key before installing this release.

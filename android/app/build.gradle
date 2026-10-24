@@ -68,6 +68,13 @@ react {
  */
 def enableMinifyInReleaseBuilds = (findProperty('android.enableMinifyInReleaseBuilds') ?: false).toBoolean()
 
+def releaseStoreFile = System.getenv("RELEASE_STORE_FILE")
+def releaseStorePassword = System.getenv("RELEASE_STORE_PASSWORD")
+def releaseKeyAlias = System.getenv("RELEASE_KEY_ALIAS")
+def releaseKeyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+def releaseSigningConfigured = [releaseStoreFile, releaseStorePassword, releaseKeyAlias, releaseKeyPassword]
+    .every { it != null && !it.trim().isEmpty() }
+
 /**
  * The preferred build flavor of JavaScriptCore (JSC)
  *
@@ -94,8 +101,8 @@ android {
         applicationId 'cc.agentlabs.opencode'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 42
-        versionName "0.4.15"
+        versionCode 43
+        versionName "0.4.16"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
@@ -106,18 +113,14 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
-        if (System.getenv("RELEASE_STORE_FILE")) {
+        if (releaseSigningConfigured) {
             release {
-                storeFile file(System.getenv("RELEASE_STORE_FILE"))
-                storePassword System.getenv("RELEASE_STORE_PASSWORD")
-                keyAlias System.getenv("RELEASE_KEY_ALIAS")
-                keyPassword System.getenv("RELEASE_KEY_PASSWORD")
-                // Sign with v1+v2 only. A v2+v3 block pair crashes the androguard
-                // version fdroidserver uses ("'NoOverwriteDict' object has no
-                // attribute 'append'"), which broke the self-hosted F-Droid repo
-                // publish from v0.4.2 on. v1+v2 installs on all supported API levels
-                // and matches the known-good published APK. Re-enable v3 only once
-                // fdroidserver/androguard ships the fix.
+                storeFile file(releaseStoreFile)
+                storeType "PKCS12"
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+                // Keep v1+v2 only for F-Droid's current androguard compatibility.
                 enableV1Signing true
                 enableV2Signing true
                 enableV3Signing false
@@ -130,7 +133,7 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
-            signingConfig signingConfigs.findByName('release') ?: signingConfigs.debug
+            signingConfig signingConfigs.findByName('release')
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
             shrinkResources enableShrinkResources.toBoolean()
             minifyEnabled enableMinifyInReleaseBuilds
@@ -153,6 +156,15 @@ android {
         // Required for F-Droid compliance — fdroid scanner rejects APKs containing this block.
         includeInApk false
         includeInBundle false
+    }
+}
+
+gradle.taskGraph.whenReady { taskGraph ->
+    def buildsRelease = taskGraph.allTasks.any { task ->
+        task.project == project && task.name.toLowerCase().contains("release")
+    }
+    if (buildsRelease && !releaseSigningConfigured) {
+        throw new GradleException("Release builds require the persistent RELEASE_STORE_FILE and signing credentials.")
     }
 }
 

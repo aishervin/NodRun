@@ -1,0 +1,1 @@
+v0.4.16 - Android release rebuilt with persistent signing. Uninstall older builds signed with the previous debug key before installing.
