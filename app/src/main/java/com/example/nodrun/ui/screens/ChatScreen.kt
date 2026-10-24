@@ -50,7 +50,9 @@ fun ChatScreen(viewModel: NodRunViewModel) {
         bottomBar = {
             Surface(
                 tonalElevation = 8.dp,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .imePadding()
             ) {
                 Row(
                     modifier = Modifier

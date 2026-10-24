@@ -17,6 +17,8 @@ import com.example.nodrun.viewmodel.NodRunViewModel
 @Composable
 fun SettingsScreen(viewModel: NodRunViewModel) {
     val apiKey by viewModel.apiKey.collectAsState()
+    val serverUrl by viewModel.serverUrl.collectAsState()
+    val copyUrl by viewModel.copyUrl.collectAsState()
     var modelName by remember { mutableStateOf("gemini-2.5-flash") }
     var autoSync by remember { mutableStateOf(true) }
 
@@ -66,6 +68,24 @@ fun SettingsScreen(viewModel: NodRunViewModel) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("api_key_input"),
+                        shape = RoundedCornerShape(8.dp),
+                        singleLine = true
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = serverUrl,
+                        onValueChange = { viewModel.setServerUrl(it) },
+                        label = { Text("Termux Server URL") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        singleLine = true
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = copyUrl,
+                        onValueChange = { viewModel.setCopyUrl(it) },
+                        label = { Text("Copy URL") },
+                        modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
                         singleLine = true
                     )
@@ -120,11 +140,11 @@ fun SettingsScreen(viewModel: NodRunViewModel) {
                     Spacer(modifier = Modifier.width(16.dp))
                     Column {
                         Text(
-                            text = "NodRun v1.0.0",
+                            text = "NodRun developed by SHΞN™",
                             style = MaterialTheme.typography.titleMedium
                         )
                         Text(
-                            text = "Exclusive SHΞN™ made",
+                            text = "☬Exclusive SHΞN™ made",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary
                         )

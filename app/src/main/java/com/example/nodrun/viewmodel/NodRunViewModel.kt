@@ -47,8 +47,22 @@ class NodRunViewModel(application: Application) : AndroidViewModel(application) 
     private val _apiKey = MutableStateFlow("")
     val apiKey: StateFlow<String> = _apiKey.asStateFlow()
 
+    private val _serverUrl = MutableStateFlow("http://127.0.0.1:4097")
+    val serverUrl: StateFlow<String> = _serverUrl.asStateFlow()
+
+    private val _copyUrl = MutableStateFlow("http://127.0.0.1:4096")
+    val copyUrl: StateFlow<String> = _copyUrl.asStateFlow()
+
     fun setApiKey(key: String) {
         _apiKey.value = key
+    }
+
+    fun setServerUrl(url: String) {
+        _serverUrl.value = url
+    }
+
+    fun setCopyUrl(url: String) {
+        _copyUrl.value = url
     }
 
     fun refreshFiles() {
