@@ -15,10 +15,10 @@ print_banner() {
     clear
     printf "${CYAN}"
     printf "  _   _           _ ____              \n"
-    printf " | \ | | ___   __| |  _ \ _   _ _ __  \n"
-    printf " |  \| |/ _ \ / _\` | |_) | | | | '_ \ \n"
-    printf " | |\  | (_) | (_| |  _ <| |_| | | | |\n"
-    printf " |_| \_|\___/ \__,_|_| \_\\\\__,_|_| |_|\n"
+    printf " | \\ | | ___   __| |  _ \\ _   _ _ __  \n"
+    printf " |  \\| |/ _ \\ / _\` | |_) | | | | '_ \\ \n"
+    printf " | |\\  | (_) | (_| |  _ <| |_| | | | |\n"
+    printf " |_| \\_|\\___/ \\__,_|_| \\_\\\\__,_|_| |_|\n"
     printf "        Exclusive SHEN lvps v1.0.0      \n"
     printf "${NC}\n"
     printf "--------------------------------------------------\n"
@@ -66,7 +66,7 @@ proot-distro login alpine --isolated -- sh -c '
 ' || print_error "Failed to install NodRun."
 print_success "NodRun installed."
 
-print_step "Configuring runner & 'nodrun' command..."
+print_step "Configuring runner script inside Alpine..."
 proot-distro login alpine --isolated -- sh -c '
     cat << "EOF" > /usr/local/bin/start-nodrun
 #!/bin/sh
@@ -83,7 +83,8 @@ EOF
     chmod +x /usr/local/bin/start-nodrun
 '
 
-cat << 'EOF' > $PREFIX/bin/nodrun
+# Create 'ocr' (Run Server) command
+cat << 'EOF' > $PREFIX/bin/ocr
 #!/data/data/com.termux/files/usr/bin/sh
 mkdir -p ~/.ssh ~/.config ~/.wrangler
 touch ~/.gitconfig
@@ -98,10 +99,27 @@ nohup proot-distro login alpine --isolated \
   --bind /data/data/com.termux/files/home/.wrangler:/root/.wrangler \
   -- /usr/local/bin/start-nodrun >/dev/null 2>&1 &
 
-printf "🚀 NodRun Server is running in background on port 4096!\n"
+printf "🚀 Server started in background on port 4096!\n"
+EOF
+chmod +x $PREFIX/bin/ocr
+
+# Create 'ock' (Kill Server) command
+cat << 'EOF' > $PREFIX/bin/ock
+#!/data/data/com.termux/files/usr/bin/sh
+pkill -f "start-nodrun" 2>/dev/null
+pkill -f "opencode" 2>/dev/null
+printf "🛑 Server stopped successfully.\n"
+EOF
+chmod +x $PREFIX/bin/ock
+
+# Create 'nodrun' shortcut
+cat << 'EOF' > $PREFIX/bin/nodrun
+#!/data/data/com.termux/files/usr/bin/sh
+$PREFIX/bin/ocr
 EOF
 chmod +x $PREFIX/bin/nodrun
-print_success "Command 'nodrun' configured."
+
+print_success "Commands 'ocr', 'ock', and 'nodrun' configured."
 
 print_step "Generating local dashboard..."
 cat << 'EOF' > ~/nodrun-dashboard.html
@@ -149,14 +167,14 @@ EOF
 pkill -f "python3 -m http.server 4097" >/dev/null 2>&1
 nohup python3 -m http.server 4097 --directory ~/ >/dev/null 2>&1 &
 
-# Auto launch NodRun server
-nodrun >/dev/null 2>&1
+# Auto start server via ocr
+ocr >/dev/null 2>&1
 
 printf "\n"
 printf "==================================================\n"
 printf "  INSTALLATION COMPLETED SUCCESSFULLY!\n"
 printf "==================================================\n"
-printf "  1. Server Status: Running in background (Port 4096)\n"
-printf "  2. Start / Restart command: nodrun\n"
-printf "  3. Open Dashboard command: termux-open http://127.0.0.1:4097\n"
+printf "  • Start Server:  ocr\n"
+printf "  • Stop Server:   ock\n"
+printf "  • Helper Page:   termux-open http://127.0.0.1:4097\n"
 printf "==================================================\n"
