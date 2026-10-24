@@ -35,6 +35,12 @@ proot-distro login alpine -- sh -lc '
   if ! command -v opencode >/dev/null 2>&1; then
     npm install -g opencode-ai
   fi
+  opencode_package="$(npm root -g)/opencode-ai"
+  if [ ! -f "$opencode_package/postinstall.mjs" ]; then
+    printf 'OpenCode postinstall script not found at %s\n' "$opencode_package" >&2
+    exit 1
+  fi
+  node "$opencode_package/postinstall.mjs"
 '
 
 mkdir -p "$HOME/.config/opencode" "$HOME/.local/share/opencode"
