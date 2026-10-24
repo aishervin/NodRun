@@ -31,37 +31,21 @@ jobs:
 
     - name: Grant execute permission for gradlew
       run: |
-        if [ -f "android/gradlew" ]; then
-          chmod +x android/gradlew
-        elif [ -f "gradlew" ]; then
-          chmod +x gradlew
-        fi
+        cd android
+        chmod +x gradlew
 
-    - name: Build Android App Bundle (AAB) with EAS / Expo
+    - name: Build Debug APK with Gradle
       run: |
-        # Use local build or expo prebuild if needed, or gradle if android folder exists
-        if [ -d "android" ]; then
-          cd android
-          ./bundleRelease || ./gradlew bundleRelease
-        else
-          npx expo run:android --variant release
-        fi
+        cd android
+        ./gradlew assembleDebug
 
-    - name: Find and Rename APK/AAB Output
-      run: |
-        mkdir -p release_output
-        find . -name "*.apk" -o -name "*.aab" | grep -v "node_modules" || true
-
-    - name: Create GitHub Release and Upload Output
+    - name: Create GitHub Release and Upload APK
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main'
       with:
         tag_name: ${{ github.ref_name == 'main' && 'v1.0.42' || github.ref_name }}
         name: "NodRun Release ${{ github.ref_name == 'main' && 'v1.0.42' || github.ref_name }} (Exclusive SHΞN™ made)"
-        files: |
-          android/app/build/outputs/apk/release/*.apk
-          android/app/build/outputs/bundle/release/*.aab
-          android/app/build/outputs/apk/debug/*.apk
+        files: android/app/build/outputs/apk/debug/app-debug.apk
         draft: false
         prerelease: false
       env:
