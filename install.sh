@@ -15,10 +15,10 @@ print_banner() {
     clear
     printf "${CYAN}"
     printf "  _   _           _ ____              \n"
-    printf " | \\ | | ___   __| |  _ \\ _   _ _ __  \n"
-    printf " |  \\| |/ _ \\ / _\` | |_) | | | | '_ \\ \n"
-    printf " | |\\  | (_) | (_| |  _ <| |_| | | | |\n"
-    printf " |_| \\_|\\___/ \\__,_|_| \\_\\\\__,_|_| |_|\n"
+    printf " | \ | | ___   __| |  _ \ _   _ _ __  \n"
+    printf " |  \| |/ _ \ / _\` | |_) | | | | '_ \ \n"
+    printf " | |\  | (_) | (_| |  _ <| |_| | | | |\n"
+    printf " |_| \_|\___/ \__,_|_| \_\\\\__,_|_| |_|\n"
     printf "        Exclusive SHEN lvps v1.0.0      \n"
     printf "${NC}\n"
     printf "--------------------------------------------------\n"
@@ -58,26 +58,20 @@ if ! proot-distro login alpine -- true >/dev/null 2>&1; then
 fi
 print_success "Alpine Linux is ready."
 
-print_step "Installing NodRun inside Alpine..."
+print_step "Installing build tools, Node.js, and NodRun inside Alpine..."
 proot-distro login alpine --isolated -- sh -c '
     apk update >/dev/null 2>&1
-    apk add --no-cache nodejs npm git openssh-client github-cli >/dev/null 2>&1
-    npm i -g git+https://github.com/aishervin/NodRun.git >/dev/null 2>&1
-' || print_error "Failed to install NodRun."
-print_success "NodRun installed."
+    apk add --no-cache nodejs npm git openssh-client github-cli build-base python3 >/dev/null 2>&1
+    npm i -g git+https://github.com/aishervin/NodRun.git --force >/dev/null 2>&1
+' || print_error "Failed to install NodRun inside Alpine."
+print_success "NodRun installed successfully."
 
 print_step "Configuring runner script inside Alpine..."
 proot-distro login alpine --isolated -- sh -c '
     cat << "EOF" > /usr/local/bin/start-nodrun
 #!/bin/sh
 cd /root/workspace 2>/dev/null || cd /root
-BIN=$(find /usr -name opencode -type f | grep node_modules/opencode-linux-arm64 | head -n 1)
-if [ -z "$BIN" ]; then
-    BIN=$(find /usr -name opencode -type f | head -n 1)
-fi
-if [ -z "$BIN" ]; then
-    BIN=$(find /usr -name nodrun -type f | head -n 1)
-fi
+BIN=$(find /usr -name opencode -type f -o -name nodrun -type f 2>/dev/null | head -n 1)
 exec "$BIN" serve --port 4096 --hostname 0.0.0.0
 EOF
     chmod +x /usr/local/bin/start-nodrun
