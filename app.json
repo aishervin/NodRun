@@ -2,7 +2,7 @@
   "expo": {
     "name": "NodRun",
     "slug": "nodrun-mobile",
-    "version": "0.4.17",
+    "version": "0.4.18",
     "orientation": "portrait",
     "scheme": "nodrun",
     "userInterfaceStyle": "automatic",
@@ -20,12 +20,12 @@
         "aps-environment": "production"
       },
       "infoPlist": {
-        "NSFaceIDUsageDescription": "Use Face ID to unlock OpenCode and access your sessions securely.",
-        "NSSpeechRecognitionUsageDescription": "OpenCode uses speech recognition so you can dictate prompts to your AI coding agent hands-free.",
-        "NSMicrophoneUsageDescription": "OpenCode uses the microphone to capture your voice when using speech-to-text input.",
-        "NSPhotoLibraryUsageDescription": "OpenCode can attach images from your photo library to messages to your AI coding agent.",
-        "NSCameraUsageDescription": "OpenCode can capture images with your camera and attach them to messages to your AI coding agent.",
-        "NSLocalNetworkUsageDescription": "OpenCode uses your local network to connect to self-hosted OpenCode servers running on your LAN.",
+        "NSFaceIDUsageDescription": "Use Face ID to unlock NodRun and access your sessions securely.",
+        "NSSpeechRecognitionUsageDescription": "NodRun uses speech recognition so you can dictate prompts to your AI coding agent hands-free.",
+        "NSMicrophoneUsageDescription": "NodRun uses the microphone to capture your voice when using speech-to-text input.",
+        "NSPhotoLibraryUsageDescription": "NodRun can attach images from your photo library to messages to your AI coding agent.",
+        "NSCameraUsageDescription": "NodRun can capture images with your camera and attach them to messages to your AI coding agent.",
+        "NSLocalNetworkUsageDescription": "NodRun uses your local network to connect to self-hosted NodRun servers running on your LAN.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
           "NSAllowsArbitraryLoadsInWebContent": false
@@ -35,7 +35,7 @@
     },
     "android": {
       "package": "cc.agentlabs.opencode",
-      "versionCode": 44,
+      "versionCode": 45,
       "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -68,16 +68,16 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "OpenCode can attach images from your photo library to messages to your AI coding agent.",
-          "cameraPermission": "OpenCode can capture images with your camera and attach them to messages to your AI coding agent.",
+          "photosPermission": "NodRun can attach images from your photo library to messages to your AI coding agent.",
+          "cameraPermission": "NodRun can capture images with your camera and attach them to messages to your AI coding agent.",
           "microphonePermission": false
         }
       ],
       [
         "expo-speech-recognition",
         {
-          "microphonePermission": "OpenCode uses the microphone to capture your voice when using speech-to-text input.",
-          "speechRecognitionPermission": "OpenCode uses speech recognition so you can dictate prompts to your AI coding agent hands-free."
+          "microphonePermission": "NodRun uses the microphone to capture your voice when using speech-to-text input.",
+          "speechRecognitionPermission": "NodRun uses speech recognition so you can dictate prompts to your AI coding agent hands-free."
         }
       ],
       "expo-localization"

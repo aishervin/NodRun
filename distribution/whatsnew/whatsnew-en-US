@@ -1,1 +1,1 @@
-Download the APK matching your Android device architecture. The release includes arm64-v8a, armeabi-v7a, and x86_64 packages, each with the NodRun app name and launcher logo.
+Use the in-app Termux setup to copy the installer command. NodRun now connects to the local server on port 4096 by default, with refreshed transparent branding, creator links, and improved keyboard handling.

@@ -52,6 +52,10 @@
       "docs": {
         "label": "文档",
         "description": "了解如何使用 NodRun"
+      },
+      "telegram": {
+        "label": "Telegram",
+        "description": "@shervini"
       }
     },
     "language": {
@@ -63,7 +67,7 @@
     },
     "footer": {
       "appName": "NodRun Mobile",
-      "tagline": "随时随地连接您的 AI 编程助手"
+      "tagline": "☬Exclusive SHΞN™ made"
     },
     "alerts": {
       "privacyNotSavedTitle": "隐私设置未保存",
@@ -237,6 +241,14 @@
       "subtitle": "添加一个 NodRun 服务器连接"
     },
     "header": "点击切换，长按查看更多选项",
+    "termux": {
+      "title": "设置 Termux",
+      "description": "复制安装命令，然后粘贴到 Termux 中。",
+      "copyButton": "复制命令",
+      "copiedTitle": "命令已复制",
+      "copiedMessage": "将命令粘贴到 Termux 并运行。NodRun 将连接到本机 4096 端口的服务器。",
+      "copyFailed": "无法复制安装命令，请重试。"
+    },
     "preferences": {
       "title": "偏好设置",
       "pageSizeLabel": "每页消息数",

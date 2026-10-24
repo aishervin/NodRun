@@ -52,6 +52,10 @@
       "docs": {
         "label": "Documentation",
         "description": "Learn how to use NodRun"
+      },
+      "telegram": {
+        "label": "Telegram",
+        "description": "@shervini"
       }
     },
     "language": {
@@ -63,7 +67,7 @@
     },
     "footer": {
       "appName": "NodRun Mobile",
-      "tagline": "Connect to your AI coding assistant from anywhere"
+      "tagline": "☬Exclusive SHΞN™ made"
     },
     "alerts": {
       "privacyNotSavedTitle": "Privacy Setting Not Saved",
@@ -237,6 +241,14 @@
       "subtitle": "Add a connection to your NodRun server"
     },
     "header": "Tap to switch, long press for options",
+    "termux": {
+      "title": "Set up Termux",
+      "description": "Copy the installer command, then paste it into Termux.",
+      "copyButton": "Copy command",
+      "copiedTitle": "Command copied",
+      "copiedMessage": "Paste the command into Termux and run it. NodRun will connect to the local server on port 4096.",
+      "copyFailed": "Could not copy the installer command. Please try again."
+    },
     "preferences": {
       "title": "Preferences",
       "pageSizeLabel": "Messages per page",

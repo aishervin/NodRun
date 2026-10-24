@@ -1,0 +1,3 @@
+v0.4.18 - Termux setup and NodRun branding
+
+Copy the Termux installer command from Connections. The app now connects to the local server on port 4096 by default, updates older saved defaults, and includes refreshed transparent branding, creator links, and keyboard handling.

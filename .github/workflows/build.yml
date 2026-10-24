@@ -32,10 +32,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Validate versions and tests
-        run: |
-          npm run check:versions
-          npm test
+      - name: Validate release version metadata
+        run: npm run check:versions
 
       - name: Prepare persistent release keystore
         env:

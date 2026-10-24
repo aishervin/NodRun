@@ -75,7 +75,7 @@ OPENCODE_SERVER_PASSWORD=yourpassword opencode serve --hostname 0.0.0.0 --port 4
 **Step 3 — Add a connection in the app**
 
 Open the app, tap **Add Connection**, and choose your connection type.
-For Termux users: `http://127.0.0.1:4097` is configured by default.
+For Termux users: the app connects to `http://127.0.0.1:4096` by default.
 
 ---
 
@@ -89,4 +89,3 @@ Developed by [SHΞN™](t.me/shervini)
 MIT — see [LICENSE](LICENSE).
 
 Copyright (c) 2026 SHΞN™
-

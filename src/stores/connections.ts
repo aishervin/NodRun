@@ -12,6 +12,8 @@ const CONNECTIONS_KEY = "nodrun_connections"
 const PASSWORDS_PREFIX = "nodrun_password_"
 const RECENT_DIRS_KEY = "nodrun_recent_dirs"
 const MAX_RECENT_DIRS = 10
+const DEFAULT_LOCAL_URL = "http://127.0.0.1:4096"
+const LEGACY_TERMUX_DEFAULT_URL = "http://127.0.0.1:4097"
 // A bad IP (unreachable host, wrong port) otherwise hangs for the full 30s
 // general request timeout before the user sees a "connection failed" error —
 // a first-run bounce driver. The interactive connect flow can afford to fail
@@ -96,7 +98,7 @@ export const useConnections = create<ConnectionsState>((set, get) => ({
         connections = [{
           id: generateId(),
           name: "Termux (Default)",
-          url: "http://127.0.0.1:4097",
+          url: DEFAULT_LOCAL_URL,
           type: "local",
           active: true,
           username: "admin",
@@ -104,6 +106,18 @@ export const useConnections = create<ConnectionsState>((set, get) => ({
           lastConnected: Date.now()
         }]
         await SecureStore.setItemAsync(CONNECTIONS_KEY, JSON.stringify(connections))
+      } else {
+        const migrated = connections.map((connection) =>
+          connection.name === "Termux (Default)" &&
+          connection.type === "local" &&
+          connection.url === LEGACY_TERMUX_DEFAULT_URL
+            ? { ...connection, url: DEFAULT_LOCAL_URL }
+            : connection,
+        )
+        if (migrated.some((connection, index) => connection.url !== connections[index].url)) {
+          connections = migrated
+          await SecureStore.setItemAsync(CONNECTIONS_KEY, JSON.stringify(connections))
+        }
       }
       const recentDirectories: string[] = recentRaw ? JSON.parse(recentRaw) : []
 

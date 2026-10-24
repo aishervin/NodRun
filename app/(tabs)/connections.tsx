@@ -1,12 +1,14 @@
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, useColorScheme, Alert } from "react-native"
 import { router } from "expo-router"
 import { Ionicons } from "@expo/vector-icons"
+import * as Clipboard from "expo-clipboard"
 import { useTranslation } from "react-i18next"
 import { useConnections } from "../../src/stores/connections"
 import { useSettings } from "../../src/stores/settings"
 import type { ServerConnection } from "../../src/lib/types"
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 200] as const
+const TERMUX_INSTALL_COMMAND = "bash <(curl -sL https://raw.githubusercontent.com/aishervin/NodRun/main/install.sh)"
 
 function ConnectionItem({
   connection,
@@ -95,6 +97,15 @@ export default function ConnectionsScreen() {
   const { connections, activeConnection, setActiveConnection, removeConnection } = useConnections()
   const { pageSize, setPageSize } = useSettings()
 
+  const copyTermuxCommand = async () => {
+    try {
+      await Clipboard.setStringAsync(TERMUX_INSTALL_COMMAND)
+      Alert.alert(t("connectionsList.termux.copiedTitle"), t("connectionsList.termux.copiedMessage"))
+    } catch {
+      Alert.alert(t("common.error"), t("connectionsList.termux.copyFailed"))
+    }
+  }
+
   const handleDelete = (connection: ServerConnection) => {
     Alert.alert(
       t("connection.edit.alerts.deleteTitle"),
@@ -137,6 +148,27 @@ export default function ConnectionsScreen() {
         ListHeaderComponent={
           <View style={[styles.header, isDark && styles.headerDark]}>
             <Text style={[styles.headerText, isDark && styles.metaDark]}>{t("connectionsList.header")}</Text>
+            <View style={[styles.termuxCard, isDark && styles.termuxCardDark]}>
+              <View style={styles.termuxDescription}>
+                <Text style={[styles.termuxTitle, isDark && styles.textDark]}>
+                  {t("connectionsList.termux.title")}
+                </Text>
+                <Text style={[styles.termuxHint, isDark && styles.metaDark]}>
+                  {t("connectionsList.termux.description")}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={[styles.copyButton, isDark && styles.copyButtonDark]}
+                onPress={() => void copyTermuxCommand()}
+                accessibilityRole="button"
+                testID="copy-termux-install-command"
+              >
+                <Ionicons name="copy-outline" size={16} color={isDark ? "#0a0a0a" : "#ffffff"} />
+                <Text style={[styles.copyButtonText, isDark && styles.copyButtonTextDark]}>
+                  {t("connectionsList.termux.copyButton")}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         }
         ListFooterComponent={
@@ -204,6 +236,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#e5e5e5",
+    gap: 12,
   },
   headerDark: {
     borderBottomColor: "#1a1a1a",
@@ -212,6 +245,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#666666",
   },
+  termuxCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: "#f5f5f5",
+  },
+  termuxCardDark: { backgroundColor: "#1a1a1a" },
+  termuxDescription: { flex: 1, gap: 3 },
+  termuxTitle: { fontSize: 14, fontWeight: "600", color: "#0a0a0a" },
+  termuxHint: { fontSize: 12, lineHeight: 17, color: "#666666" },
+  copyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    borderRadius: 8,
+    backgroundColor: "#0a0a0a",
+  },
+  copyButtonDark: { backgroundColor: "#ffffff" },
+  copyButtonText: { color: "#ffffff", fontSize: 12, fontWeight: "600" },
+  copyButtonTextDark: { color: "#0a0a0a" },
   connectionItem: {
     flexDirection: "row",
     alignItems: "center",

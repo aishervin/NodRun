@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import {
   View,
   Text,
+  Image,
   ScrollView,
   TouchableOpacity,
   Switch,
@@ -289,7 +290,7 @@ export default function SettingsScreen() {
           label={t("settings.about.github.label")}
           description={t("settings.about.github.description")}
           isDark={isDark}
-          onPress={() => Linking.openURL("https://github.com/anomalyco/opencode")}
+          onPress={() => Linking.openURL("https://github.com/aishervin/NodRun")}
           right={<Ionicons name="open-outline" size={20} color={isDark ? "#666666" : "#999999"} />}
         />
         <SettingRow
@@ -297,12 +298,21 @@ export default function SettingsScreen() {
           label={t("settings.about.docs.label")}
           description={t("settings.about.docs.description")}
           isDark={isDark}
-          onPress={() => Linking.openURL("https://opencode.ai/docs")}
+          onPress={() => Linking.openURL("https://github.com/aishervin/NodRun#readme")}
+          right={<Ionicons name="open-outline" size={20} color={isDark ? "#666666" : "#999999"} />}
+        />
+        <SettingRow
+          icon="paper-plane"
+          label={t("settings.about.telegram.label")}
+          description={t("settings.about.telegram.description")}
+          isDark={isDark}
+          onPress={() => Linking.openURL("https://t.me/shervini")}
           right={<Ionicons name="open-outline" size={20} color={isDark ? "#666666" : "#999999"} />}
         />
       </SettingSection>
 
       <View style={styles.footer}>
+        <Image source={require("../../assets/nodrun-logo.png")} style={styles.footerLogo} resizeMode="contain" />
         <Text style={[styles.footerText, isDark && styles.metaDark]}>{t("settings.footer.appName")}</Text>
         <Text style={[styles.footerText, isDark && styles.metaDark]}>{t("settings.footer.tagline")}</Text>
       </View>
@@ -390,6 +400,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 32,
   },
+  footerLogo: { width: 72, height: 72, marginBottom: 12, backgroundColor: "transparent" },
   footerText: {
     fontSize: 13,
     color: "#999999",
