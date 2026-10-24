@@ -40,7 +40,10 @@ proot-distro login alpine -- sh -lc '
     printf 'OpenCode postinstall script not found at %s\n' "$opencode_package" >&2
     exit 1
   fi
-  node "$opencode_package/postinstall.mjs"
+  printf 'Preparing OpenCode binary...\n'
+  (cd "$opencode_package" && node postinstall.mjs)
+  printf 'OpenCode binary version: '
+  "$opencode_package/bin/opencode.exe" --version
 '
 
 mkdir -p "$HOME/.config/opencode" "$HOME/.local/share/opencode"
@@ -51,4 +54,4 @@ exec proot-distro login alpine \
   --bind "$HOME:/root/workspace" \
   --bind "$HOME/.config/opencode:/root/.config/opencode" \
   --bind "$HOME/.local/share/opencode:/root/.local/share/opencode" \
-  -- sh -lc 'cd /root/workspace && exec opencode serve --hostname 127.0.0.1 --port 4096'
+  -- sh -lc 'cd /root/workspace && exec "$(npm root -g)/opencode-ai/bin/opencode.exe" serve --hostname 127.0.0.1 --port 4096'
