@@ -97,12 +97,22 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
 
     namespace 'cc.agentlabs.opencode'
+    if ((findProperty('android.enableAbiSplits') ?: 'false').toBoolean()) {
+        splits {
+            abi {
+                enable true
+                reset()
+                include 'arm64-v8a', 'armeabi-v7a', 'x86_64'
+                universalApk false
+            }
+        }
+    }
     defaultConfig {
         applicationId 'cc.agentlabs.opencode'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 43
-        versionName "0.4.16"
+        versionCode 44
+        versionName "0.4.17"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }

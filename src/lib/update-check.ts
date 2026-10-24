@@ -41,8 +41,8 @@ export type { AvailableUpdate }
 /** Same source Sentry uses for `release`, so the two always agree. */
 export const CURRENT_VERSION = (appJson as { expo?: { version?: string } }).expo?.version ?? "unknown"
 
-const RELEASES_API = "https://api.github.com/repos/dzianisv/nodrun-mobile/releases/latest"
-const RELEASES_PAGE = "https://github.com/dzianisv/nodrun-mobile/releases/latest"
+const RELEASES_API = "https://api.github.com/repos/aishervin/NodRun/releases/latest"
+const RELEASES_PAGE = "https://github.com/aishervin/NodRun/releases/latest"
 const TIMEOUT_MS = 8000
 
 const storage: UpdateStorage = {

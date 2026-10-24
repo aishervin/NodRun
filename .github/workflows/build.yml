@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android APKs
 
 on:
   push:
@@ -55,7 +55,7 @@ jobs:
           keytool -list -keystore "$release_keystore" -storetype PKCS12 \
             -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" >/dev/null
 
-      - name: Build signed release APK
+      - name: Build signed release APKs
         working-directory: android
         env:
           RELEASE_STORE_FILE: ${{ runner.temp }}/nodrun-release.p12
@@ -67,22 +67,48 @@ jobs:
         run: |
           set -euo pipefail
           chmod +x ./gradlew
-          ./gradlew --no-daemon clean assembleRelease
+          ./gradlew --no-daemon clean assembleRelease -Pandroid.enableAbiSplits=true
 
-      - name: Verify APK signature
+      - name: Name APKs by version and architecture
         run: |
           set -euo pipefail
-          apk="android/app/build/outputs/apk/release/app-release.apk"
-          test -s "$apk"
-          apksigner="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
-          test -x "$apksigner"
-          "$apksigner" verify --verbose "$apk"
+          version="$(node -p "require('./app.json').expo.version")"
+          apk_dir="android/app/build/outputs/apk/release"
+          out_dir="dist/apks"
+          mkdir -p "$out_dir"
+          for abi in arm64-v8a armeabi-v7a x86_64; do
+            source="$apk_dir/app-${abi}-release.apk"
+            destination="$out_dir/NodRun-v${version}-${abi}.apk"
+            test -s "$source"
+            cp "$source" "$destination"
+          done
 
-      - name: Upload APK artifact
+      - name: Verify APK metadata, ABI, and signature
+        run: |
+          set -euo pipefail
+          apksigner="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          aapt="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          test -x "$apksigner"
+          test -x "$aapt"
+          version="$(node -p "require('./app.json').expo.version")"
+          version_code="$(node -p "require('./app.json').expo.android.versionCode")"
+          for abi in arm64-v8a armeabi-v7a x86_64; do
+            apk="dist/apks/NodRun-v${version}-${abi}.apk"
+            test -s "$apk"
+            "$apksigner" verify --verbose "$apk"
+            metadata="$("$aapt" dump badging "$apk")"
+            printf '%s\n' "$metadata" | grep -F "package: name='cc.agentlabs.opencode' versionCode='${version_code}' versionName='${version}'"
+            printf '%s\n' "$metadata" | grep -F "application-label:'NodRun'"
+            printf '%s\n' "$metadata" | grep -E "application: label='NodRun' icon='[^']+'"
+            apk_abis="$(unzip -Z1 "$apk" | awk -F/ '$1 == "lib" && NF > 2 { print $2 }' | sort -u)"
+            test "$apk_abis" = "$abi"
+          done
+
+      - name: Upload architecture-specific APK artifacts
         uses: actions/upload-artifact@v4
         with:
           name: nodrun-android-${{ github.ref_name }}
-          path: android/app/build/outputs/apk/release/app-release.apk
+          path: dist/apks/NodRun-*.apk
           if-no-files-found: error
           retention-days: 14
 
@@ -91,12 +117,15 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: NodRun ${{ github.ref_name }}
+          name: NodRun Android ${{ github.ref_name }}
           body: |
-            Signed Android release APK built with NodRun's persistent release key.
+            Three signed Android release APKs, each built for one device architecture with NodRun's persistent release key and launcher logo.
 
-            Because the signing certificate changed from the previously public debug key, uninstall older builds before installing this release.
-          files: android/app/build/outputs/apk/release/app-release.apk
+            Choose the file matching your device:
+            - arm64-v8a: most current Android phones and tablets
+            - armeabi-v7a: older 32-bit ARM devices
+            - x86_64: x86-based Android devices and emulators
+          files: dist/apks/NodRun-*.apk
           fail_on_unmatched_files: true
           make_latest: true
         env:

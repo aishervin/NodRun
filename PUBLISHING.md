@@ -49,7 +49,7 @@ It builds an AAB (Android App Bundle), signs it with the release keystore, and u
 2. Add the changelog for the **new versionCode** in both `distribution/changelogs/<versionCode>.txt` and `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (F-Droid reads the fastlane copy), and update the **Play** release notes in `distribution/whatsnew/whatsnew-en-US` (single file, applied to the build being uploaded; **max 500 chars**). `whatsnew` — not the fastlane `changelogs/*.txt` — is what the Play publish uses (`whatsNewDirectory` in the workflow). `check:versions` enforces that the changelog named after the versionCode describes the version you are releasing. Merge to `main`.
 3. Tag the release: `git tag -a vX.Y.Z <sha> -m "..." && git push origin vX.Y.Z`. This triggers the publish workflow → **production** track, `status: completed`.
 4. Verify the publish run is green, and read the run summary — it records the event, resolved track/status, and the real Play `versionCode` (run_number+100, not the `app.json` number).
-5. Check the other two channels, because Play is only one of three and the smaller share of the install base: the **GitHub release** exists with both APKs (`build.yml`'s `release` job — this is what the in-app update check polls via `releases/latest`), and the **F-Droid index** lists the new version (`https://aishervin.github.io/NodRun/fdroid/repo/index-v1.json`).
+5. Check the other two channels, because Play is only one of three and the smaller share of the install base: the **GitHub release** exists with three ABI-specific APKs (`arm64-v8a`, `armeabi-v7a`, and `x86_64`; this is what the in-app update check polls via `releases/latest`), and the **F-Droid index** lists the new version (`https://aishervin.github.io/NodRun/fdroid/repo/index-v1.json`).
 6. Nothing else to do. There is no second promotion step.
 
 ## Promoting to production
@@ -109,4 +109,3 @@ bundle exec fastlane android deploy
 ```
 
 Set environment variables: `SUPPLY_JSON_KEY`, `RELEASE_STORE_FILE`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD`.
-

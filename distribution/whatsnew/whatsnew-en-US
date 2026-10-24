@@ -1,1 +1,1 @@
-Android release signing is now persistent and consistent. Uninstall older builds signed with the previous debug key before installing this update.
+Download the APK matching your Android device architecture. The release includes arm64-v8a, armeabi-v7a, and x86_64 packages, each with the NodRun app name and launcher logo.

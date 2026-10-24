@@ -11,7 +11,7 @@
 
 import { test, before, after } from "node:test"
 import assert from "node:assert/strict"
-import { createMockOpencodeServer } from "../../tests/fixtures/mock-nodrun-server.ts"
+import { createMockOpencodeServer } from "../../tests/fixtures/mock-opencode-server.ts"
 import { loadSessionList, legacySessionQuery, type SessionListTransport } from "./session-list.ts"
 
 const PORT = 45071
