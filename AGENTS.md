@@ -17,7 +17,7 @@ See [`.agents/retro.md`](.agents/retro.md) for lessons from past tasks. Read ent
 **Diagnose before fixing:** Before patching or replacing any tool, confirm it is actually the cause. Copilot burned 39h assuming chrome-devtools-mcp was broken — it wasn't (it already drives the authenticated default context via `browser.defaultBrowserContext()`/`browser.pages()`). A 3-minute diagnostic subagent would have caught this.
 
 **Known gated steps:**
-- Play Console **API-access grant** to the service account — *was* the blocker; now granted (publish run 26662900471 succeeded, AAB on internal track, versionCode 19). One-time path if re-needed: Play Console → Setup → API access → link GCP project `opencode-mobile-deploy` → grant `playstore-deploy@opencode-mobile-deploy.iam.gserviceaccount.com` Admin/Release-manager.
+- Play Console **API-access grant** to the service account — *was* the blocker; now granted (publish run 26662900471 succeeded, AAB on internal track, versionCode 19). One-time path if re-needed: Play Console → Setup → API access → link GCP project `nodrun-mobile-deploy` → grant `playstore-deploy@nodrun-mobile-deploy.iam.gserviceaccount.com` Admin/Release-manager.
 - **Add internal testers** (Play Console → Internal testing → Testers): the genuinely human-gated residual. Google's anti-automation blocks CDP-controlled Chrome sign-in, so this UI step needs a human (or a real, non-CDP browser session).
 
 **Stop discipline:** If a tool returns the same error 3× (or no new artifact/commit is produced across several turns), STOP. Print a BLOCKED summary with the single human action needed. A vague "please do X and let me know" that leaves you idle is worse than a clean stop — don't do it.
@@ -32,7 +32,7 @@ See [`.agents/retro.md`](.agents/retro.md) for lessons from past tasks. Read ent
 
 React Native / Expo mobile client for opencode. Connects to an opencode server instance via HTTP + SSE for real-time updates.
 
-**Repo**: `dzianisv/opencode-mobile` (standalone, not part of opencode monorepo)
+**Repo**: `aishervin/NodRun`
 **Package name**: `cc.agentlabs.opencode`
 
 ## Architecture
@@ -86,8 +86,6 @@ npx expo run:android  # Android emulator
 
 Run `opencode serve --hostname 0.0.0.0 --port 4096` on your machine, then add a connection in the app with your machine's local IP and port 4096.
 
-**Dev server**: `100.108.64.76:4096` (Tailscale, hostname `openclaw-dev-1`)
-
 ## Android Emulator (local dev)
 
 **IMPORTANT: Do NOT install SDK/AVD on the system disk. Use the external disk.**
@@ -126,7 +124,7 @@ Runs: connect → sessions load (pre-created session MUST appear) → new sessio
 source ~/.env.d/azure-openai.env
 python3 scripts/android-cua-smoke.py --e2e \
   --opencode-url http://100.108.64.76:4096 \
-  --e2e-project-dir ~/workspace/opencode-mobile \
+  --e2e-project-dir ~/workspace/nodrun-mobile \
   --e2e-model-hint deepseek \
   --e2e-task "Write a hello_world.py file that prints 'Hello World' to stdout." \
   --e2e-filename hello_world.py
@@ -139,7 +137,7 @@ source ~/.env.d/azure-openai.env
 python3 scripts/android-cua-smoke.py \
   --opencode-url http://100.108.64.76:4096 \
   --query "Open android app. Setup against remote opencode server. Go to sessions. \
-           Open a new project inside ~/workspace/opencode-mobile. \
+           Open a new project inside ~/workspace/nodrun-mobile. \
            Choose opencode/deepseek model. Start a new session. \
            Ask to write hello_world.py. Validate that agent completed task." \
   --eval-output /tmp/eval-report.json
@@ -170,7 +168,7 @@ The correct Azure AI Services endpoint (with actual deployments) is:
 ### CI
 
 GitHub Actions workflow: `.github/workflows/cua-smoke.yml`
-Secrets required: `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT` (already set on `dzianisv/opencode-mobile`).
+Secrets required: `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT` (already set on `aishervin/NodRun`).
 
 **Triggers**: Runs on push to `main` (with path filters) AND on `v*` tags (releases).
 
@@ -192,7 +190,7 @@ If the CUA test fails, do NOT merge or release until fixed.
 
 ## Secrets Management
 
-All project secrets are stored in Bitwarden vault under folder **`opencode-mobile`**.
+All project secrets are stored in Bitwarden vault under folder **`nodrun-mobile`**.
 
 Use the `bitwarden-cli` skill to read/write secrets. Quick reference:
 
@@ -206,60 +204,6 @@ bw sync --session "$BW_SESSION"
 bw get notes "EXPO_PUBLIC_SENTRY_DSN" --session "$BW_SESSION"
 
 # List all secrets in the folder
-FOLDER_ID=$(bw list folders --session "$BW_SESSION" | jq -r '.[] | select(.name=="opencode-mobile") | .id')
+FOLDER_ID=$(bw list folders --session "$BW_SESSION" | jq -r '.[] | select(.name=="nodrun-mobile") | .id')
 bw list items --session "$BW_SESSION" | jq --arg f "$FOLDER_ID" '[.[] | select(.folderId==$f) | {name}]'
-```
 
-Secrets stored in vault:
-- `EXPO_PUBLIC_SENTRY_DSN` — Sentry ingest DSN (embedded in APK at build time)
-- `SENTRY_AUTH_TOKEN` — sentry-cli upload token (source maps, releases)
-- `SENTRY_ORG` — `vibetechnologies`
-- `SENTRY_PROJECT` — `opencode-mobile`
-
-These same secrets are set as GitHub Actions secrets on `dzianisv/opencode-mobile` for CI builds.
-
-**Do NOT store secrets in `.env` files committed to the repo.** `.env` is gitignored — local copy only.
-
-## VibeBrowser CLI (Browser Automation)
-
-Use `@vibebrowser/cli` against the authenticated remote browser relay. Do not
-register or use the retired `chrome-devtools` MCP server in Copilot.
-
-Keep the relay URL outside the repository:
-
-```bash
-export VIBEBROWSER_REMOTE_URL='wss://relay.api.vibebrowser.app/<session-id>'
-npx -y @vibebrowser/cli@0.2.12 \
-  --remote "$VIBEBROWSER_REMOTE_URL" --json status
-```
-
-List tabs first, then pass `--page-id` on every command so automation does not
-switch or disturb the user's active tab:
-
-```bash
-npx -y @vibebrowser/cli@0.2.12 \
-  --remote "$VIBEBROWSER_REMOTE_URL" --json tabs
-npx -y @vibebrowser/cli@0.2.12 \
-  --remote "$VIBEBROWSER_REMOTE_URL" --page-id <id> --json snapshot
-```
-
-## GitHub Auth
-
-For pushes/gh CLI on this repo: `source ~/.env.d/github-dzianisv.env`
-
-## Google Account
-
-**ALL Google operations** (Play Console, GCP Console, YouTube, Firebase, etc.) use **`vibeteaichnologies@gmail.com`** — the VIBE TECHNOLOGIES, LLC account. `dzianisvv@gmail.com` is the personal account and does NOT have access to the project GCP resources, Play Console, or YouTube channel. Always verify the active account in the top-right corner before making changes. If GCP console shows `dzianisvv@gmail.com`, switch accounts via the avatar menu.
-
-## Google Play Console
-
-- **Developer account**: VIBE TECHNOLOGIES, LLC (ID: `8842655543970815326`), Google login `vibeteaichnologies@gmail.com`. The `/u/N/` index is NOT stable — if a console URL bounces to accept-terms/create-developer-account you're on the wrong Google account (e.g. `dzianisvv@gmail.com` hits a ToS gate); use the developer-account chooser to reach VIBE.
-- **Rebrand (2026-05-30)**: package renamed `ai.opencode.mobile` → `cc.agentlabs.opencode`. **App IS live on Play Store internal track** (v0.4.6, versionCode 33). CI publishes updates automatically via the service account after the first manual upload was completed. CI `packageName` = `cc.agentlabs.opencode`. NOTE: CI publish build needs the "Purge stale generated sources" step (commit 67e4c1f) or cached old-package autolinking breaks compile.
-- **Legacy app (orphaned)**: `ai.opencode.mobile`, app ID `4975545755653045321` — published v19 to internal track (run 26662900471), superseded by the rebrand.
-- **Track**: Internal testing (no review required, up to 100 testers)
-- **Service account**: `playstore-deploy@opencode-mobile-deploy.iam.gserviceaccount.com` (account-level API access already granted)
-
-## Related Issues
-
-- Upstream: `anomalyco/opencode#10288`
-- Branch on upstream fork: `feat/android-backbone-10288` on `dzianisv/opencode`
