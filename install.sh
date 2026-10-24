@@ -1,6 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+printf '\033[0;36m'
+cat <<'NODRUN_BANNER'
+  _   _           _ ____              
+ | \ | | ___   __| |  _ \ _   _ _ __  
+ |  \| |/ _ \ / _` | |_) | | | | '_ \ 
+ | |\  | (_) | (_| |  _ <| |_| | | | |
+ |_| \_|\___/ \__,_|_| \_\\__,_|_| |_|
+        Exclusive SHEN lvps v1.0.0
+NODRUN_BANNER
+printf '\033[0m\n'
+printf '%s\n' '--------------------------------------------------'
+
 case "$(uname -m)" in
   aarch64|x86_64) ;;
   *) printf 'OpenCode server requires a 64-bit ARM or x86_64 device.\n' >&2; exit 1 ;;
