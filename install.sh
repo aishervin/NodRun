@@ -39,6 +39,10 @@ print_error() {
 
 print_banner
 
+print_step "Cleaning up background locks..."
+pkill -9 -f "nodrun serve" >/dev/null 2>&1
+pkill -9 -f "opencode" >/dev/null 2>&1
+
 print_step "Updating Termux packages..."
 export DEBIAN_FRONTEND=noninteractive
 yes "" | pkg update -y && yes "" | pkg upgrade -y -o Dpkg::Options::="--force-confnew" || print_error "Failed to update Termux packages."
@@ -49,7 +53,7 @@ pkg install -y proot-distro curl git python -o Dpkg::Options::="--force-confnew"
 print_success "Dependencies installed successfully."
 
 print_step "Setting up Alpine Linux environment via PRoot..."
-if ! proot-distro list | grep -q "alpine.*installed"; then
+if ! proot-distro login alpine -- true >/dev/null 2>&1; then
     proot-distro install alpine || print_error "Failed to install Alpine Linux."
 fi
 print_success "Alpine Linux environment is ready."
