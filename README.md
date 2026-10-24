@@ -1,4 +1,4 @@
-# NodRun Mobile
+# NodRun Exclusive SHΞN™ made mobile teminal Agent
 
 **The open-source Android client for the [opencode](https://github.com/sst/opencode) AI coding agent.**
 AI-assisted coding from your phone — Android, via Google Play, F-Droid, or a direct APK.
