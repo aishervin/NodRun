@@ -19,7 +19,7 @@ say "Checking Termux prerequisites..."
 pkg update -y
 pkg install -y proot-distro git curl
 
-if ! proot-distro list 2>/dev/null | grep -qiE '(^|[[:space:]])alpine([[:space:]]|$|\*)'; then
+if ! proot-distro login "$DISTRO" -- true >/dev/null 2>&1; then
   say "Installing Alpine Linux (first run can take a while)..."
   proot-distro install "$DISTRO"
 fi
