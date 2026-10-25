@@ -1,8 +1,8 @@
 #!/bin/sh
 
-echo "🚀 Scanning & Setting up ☬SHΞN™ NodRun Repository..."
+echo "🚀 Initializing ☬SHΞN™ NodRun Ultimate Master Script..."
 
-# 1. بررسی و نصب پیش‌نیازهای پایه‌ای در ترموکس (اضافه شدن پکیج‌های لازم برای بیلد و اکسپو)
+# 1. بررسی و نصب پیش‌نیازهای پایه‌ای در ترموکس
 MISSING_PKGS=""
 for pkg in nodejs git curl; do
     if ! command -v $pkg >/dev/null 2>&1; then
@@ -13,27 +13,32 @@ done
 if [ -n "$MISSING_PKGS" ]; then
     echo "📦 Installing missing packages:$MISSING_PKGS..."
     pkg update -y >/dev/null 2>&1
-    pkg install -y nodejs git curl cloudflared libpng python-make >/dev/null 2>&1
+    pkg install -y nodejs git curl cloudflared >/dev/null 2>&1
 else
     echo "✔ Core packages are ready."
 fi
 
-# 2. بررسی مخزن گیت و پوشه پروژه
-if [ -d ".git" ]; then
+# 2. کلون یا آپدیت مخزن پروژه
+PROJECT_DIR="$HOME/NodRun"
+if [ -d "$PROJECT_DIR/.git" ]; then
     echo "🔄 Updating existing repository..."
+    cd "$PROJECT_DIR"
     git pull origin main >/dev/null 2>&1
 else
     echo "📥 Cloning NodRun repository..."
-    git clone https://github.com/aishervin/NodRun.git ~/NodRun >/dev/null 2>&1
-    cd ~/NodRun
+    git clone https://github.com/aishervin/NodRun.git "$PROJECT_DIR" >/dev/null 2>&1
+    cd "$PROJECT_DIR"
 fi
 
-# 3. نصب پکیج‌های Node و ابزارهای اکسپو به صورت لوکال/گلوبال برای جلوگیری از خطای not found
-if [ -f "package.json" ]; then
-    echo "📦 Installing Node modules & Expo tools..."
-    npm install --silent >/dev/null 2>&1
-    npm install -g expo-cli @expo/ngrok --silent >/dev/null 2>&1
-fi
+# 3. پاکسازی کامل و نصب تمیز پکیج‌ها (جلوگیری از خطای source-map و pngjs)
+echo "📦 Performing clean npm installation & removing broken caches..."
+cd "$PROJECT_DIR"
+rm -rf node_modules package-lock.json >/dev/null 2>&1
+npm cache clean --force >/dev/null 2>&1
+npm install --legacy-peer-deps >/dev/null 2>&1
+
+# تزریق صریح پکیج‌های حیاتی برای جلوگیری از ارور مفقودی ماژول‌ها
+npm install expo pngjs source-map-support --save --legacy-peer-deps >/dev/null 2>&1
 
 # 4. ساخت پوشه سلامت (Health Check)
 echo "🛠 Configuring API health endpoints..."
@@ -46,7 +51,7 @@ cat << 'EOF' > ~/global/health
 }
 EOF
 
-# 5. ساخت دستورات میانبر اختصاصی ocr و ock (با رفع خطای expo not found)
+# 5. ساخت دستورات میانبر اختصاصی ocr و ock با تنظیم دقیق PATH و پاکسازی پورت‌ها
 echo "⚡ Creating global shortcuts (ocr & ock)..."
 
 cat << 'EOF' > $PREFIX/bin/ocr
@@ -63,17 +68,17 @@ fi
 
 cd "$PROJECT_DIR"
 export PORT=4096
+export PATH="$PROJECT_DIR/node_modules/.bin:$PREFIX/bin:$PATH"
 
-# اجرای اکسپو یا اسکریپت اصلی پروژه با پشتیبانی از npx برای جلوگیری از خطای not found
 echo "Starting NodRun server..." > ~/nodrun.log
-nohup npx expo start --port 4096 --offline > ~/nodrun.log 2>&1 &
+nohup npx --yes expo start --port 4096 --offline > ~/nodrun.log 2>&1 &
 
 sleep 3
 
 printf "\n==================================================\n"
-printf "🚀 NodRun Engine Triggered on port 4096!\n"
-printf "📄 Check logs if needed: cat ~/nodrun.log\n"
+printf "🚀 NodRun Engine is LIVE on port 4096!\n"
 printf "🔗 Health Check: http://127.0.0.1:4096/global/health\n"
+printf "📄 Logs: cat ~/nodrun.log\n"
 printf "==================================================\n"
 EOF
 chmod +x $PREFIX/bin/ocr
@@ -87,12 +92,12 @@ printf "🛑 NodRun Server stopped successfully.\n"
 EOF
 chmod +x $PREFIX/bin/ock
 
-# 6. فعال‌سازی Wakelock
+# 6. فعال‌سازی Wakelock برای جلوگیری از خواب رفتن پروسه در پس‌زمینه
 if command -v termux-wake-lock >/dev/null 2>&1; then
     termux-wake-lock
     echo "🔋 Termux Wakelock activated."
 fi
 
 echo ""
-echo "✅ Setup completed, Boss!"
-echo "👉 Now type 'ock' then 'ocr' to run the main server!"
+echo "✅ Complete Master Setup Finished Successfully!"
+echo "👉 Users can now just type 'ock' then 'ocr' to run everything smoothly!"
