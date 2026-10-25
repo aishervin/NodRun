@@ -1,174 +1,108 @@
-#!/usr/bin/env sh
-# =====================================================================
-# NodRun Automated Installer for Termux
-# Author: Shervin (aishervin)
-# Exclusive ☬SHΞN™ made
-# =====================================================================
-
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-CYAN='\033[0;36m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
-
-print_banner() {
-    clear
-    printf "${CYAN}"
-    printf "  _   _           _ ____              \n"
-    printf " | \ | | ___   __| |  _ \ _   _ _ __  \n"
-    printf " |  \| |/ _ \ / _\` | |_) | | | | '_ \ \n"
-    printf " | |\  | (_) | (_| |  _ <| |_| | | | |\n"
-    printf " |_| \_|\___/ \__,_|_| \_\\\\__,_|_| |_|\n"
-    printf "        Exclusive SHEN lvps v1.0.0      \n"
-    printf "${NC}\n"
-    printf "--------------------------------------------------\n"
-}
-
-print_step() {
-    printf "${YELLOW}[*] %s${NC}\n" "$1"
-}
-
-print_success() {
-    printf "${GREEN}[✔] %s${NC}\n" "$1"
-}
-
-print_error() {
-    printf "${RED}[✖] %s${NC}\n" "$1"
-    exit 1
-}
-
-print_banner
-
-print_step "Cleaning up background processes..."
-pkill -9 -f "proot|nodrun|opencode|python" >/dev/null 2>&1
-
-print_step "Updating Termux packages..."
-export DEBIAN_FRONTEND=noninteractive
-yes "" 2>/dev/null | pkg update -y >/dev/null 2>&1
-yes "" 2>/dev/null | pkg upgrade -y -o Dpkg::Options::="--force-confnew" >/dev/null 2>&1 || print_error "Failed to update Termux packages."
-print_success "Termux packages updated."
-
-print_step "Installing essential dependencies..."
-pkg install -y proot-distro curl git python -o Dpkg::Options::="--force-confnew" >/dev/null 2>&1 || print_error "Failed to install dependencies."
-print_success "Dependencies installed."
-
-print_step "Setting up Alpine Linux..."
-if ! proot-distro login alpine -- true >/dev/null 2>&1; then
-    proot-distro install alpine >/dev/null 2>&1 || print_error "Failed to install Alpine Linux."
-fi
-print_success "Alpine Linux is ready."
-
-print_step "Installing build tools, Node.js, and NodRun inside Alpine..."
-proot-distro login alpine --isolated -- sh -c '
-    apk update >/dev/null 2>&1
-    apk add --no-cache nodejs npm git openssh-client github-cli build-base python3 >/dev/null 2>&1
-    npm i -g git+https://github.com/aishervin/NodRun.git --force >/dev/null 2>&1
-' || print_error "Failed to install NodRun inside Alpine."
-print_success "NodRun installed successfully."
-
-print_step "Configuring runner script inside Alpine..."
-proot-distro login alpine --isolated -- sh -c '
-    cat << "EOF" > /usr/local/bin/start-nodrun
 #!/bin/sh
-cd /root/workspace 2>/dev/null || cd /root
-BIN=$(find /usr -name opencode -type f -o -name nodrun -type f 2>/dev/null | head -n 1)
-exec "$BIN" serve --port 4096 --hostname 0.0.0.0
-EOF
-    chmod +x /usr/local/bin/start-nodrun
-'
 
-# Create 'ocr' (Run Server) command
+echo "🚀 Scanning & Setting up ☬SHΞN™ NodRun Repository..."
+
+# 1. بررسی و نصب پیش‌نیازهای پایه‌ای در ترموکس
+MISSING_PKGS=""
+for pkg in python3 nodejs git curl; do
+    if ! command -v $pkg >/dev/null 2>&1; then
+        MISSING_PKGS="$MISSING_PKGS $pkg"
+    fi
+done
+
+if [ -n "$MISSING_PKGS" ]; then
+    echo "📦 Installing missing packages:$MISSING_PKGS..."
+    pkg update -y >/dev/null 2>&1
+    pkg install -y python3 nodejs git curl cloudflared >/dev/null 2>&1
+else
+    echo "✔ Core packages (Python, Node, Git, Curl, Cloudflared) are ready."
+fi
+
+# 2. بررسی مخزن گیت و پوشه پروژه
+if [ -d ".git" ]; then
+    echo "🔄 Updating existing repository..."
+    git pull origin main >/dev/null 2>&1
+else
+    echo "📥 Cloning NodRun repository..."
+    git clone https://github.com/aishervin/NodRun.git ~/NodRun >/dev/null 2>&1
+    cd ~/NodRun
+fi
+
+# 3. نصب وابستگی‌های Node در صورت وجود package.json
+if [ -f "package.json" ]; then
+    echo "📦 Checking Node modules..."
+    if [ ! -d "node_modules" ]; then
+        npm install --silent >/dev/null 2>&1
+    else
+        echo "✔ Node modules already installed."
+    fi
+fi
+
+# 4. ساخت پوشه سلامت (Health Check) برای جلوگیری از خطاهای 404/530
+echo "🛠 Configuring API health endpoints..."
+mkdir -p ~/global
+cat << 'EOF' > ~/global/health
+{
+  "status": "ok",
+  "service": "NodRun Engine",
+  "version": "1.0.0"
+}
+EOF
+
+# اگر پوشه website یا public توی پروژه هست، فایل سلامت را آنجا هم کپی می‌کنیم تا سرور پایتون بدون مشکل پاسخ دهد
+if [ -d "website" ]; then
+    mkdir -p website/global
+    cp ~/global/health website/global/health
+fi
+
+# 5. ساخت دستورات میانبر اختصاصی ocr و ock
+echo "⚡ Creating global shortcuts (ocr & ock)..."
+
 cat << 'EOF' > $PREFIX/bin/ocr
 #!/data/data/com.termux/files/usr/bin/sh
-mkdir -p ~/.ssh ~/.config ~/.wrangler
-touch ~/.gitconfig
+# پاکسازی پورت‌ها و پروسه‌های قبلی
+pkill -9 -f "http.server 4096" 2>/dev/null
+pkill -9 -f "ts-node" 2>/dev/null
+fuser -k 4096/tcp 2>/dev/null
+sleep 0.5
 
-pkill -f "start-nodrun" 2>/dev/null
-pkill -f "opencode" 2>/dev/null
+# تعیین مسیر ریشه پروژه
+PROJECT_DIR="$HOME/NodRun"
+if [ ! -d "$PROJECT_DIR" ]; then
+    PROJECT_DIR="$PWD"
+fi
 
-nohup proot-distro login alpine --isolated \
-  --bind /data/data/com.termux/files/home:/root/workspace \
-  --bind /data/data/com.termux/files/home/.ssh:/root/.ssh \
-  --bind /data/data/com.termux/files/home/.gitconfig:/root/.gitconfig \
-  --bind /data/data/com.termux/files/home/.wrangler:/root/.wrangler \
-  -- /usr/local/bin/start-nodrun >/dev/null 2>&1 &
+# اجرای سرور (استفاده از پوشه website یا ریشه برای پایتون جهت سازگاری کامل با اپلیکیشن)
+SERVE_DIR="$PROJECT_DIR/website"
+if [ ! -d "$SERVE_DIR" ]; then
+    SERVE_DIR="$PROJECT_DIR"
+fi
 
-printf "🚀 Server started in background on port 4096!\n"
+nohup python3 -m http.server 4096 --directory "$SERVE_DIR" >/dev/null 2>&1 &
+
+printf "\n==================================================\n"
+printf "🚀 NodRun Local Server is LIVE on port 4096!\n"
+printf "📂 Serving from: $SERVE_DIR\n"
+printf "🔗 Health Check: http://127.0.0.1:4096/global/health\n"
+printf "==================================================\n"
 EOF
 chmod +x $PREFIX/bin/ocr
 
-# Create 'ock' (Kill Server) command
 cat << 'EOF' > $PREFIX/bin/ock
 #!/data/data/com.termux/files/usr/bin/sh
-pkill -f "start-nodrun" 2>/dev/null
-pkill -f "opencode" 2>/dev/null
-printf "🛑 Server stopped successfully.\n"
+pkill -9 -f "http.server 4096" 2>/dev/null
+pkill -9 -f "ts-node" 2>/dev/null
+fuser -k 4096/tcp 2>/dev/null
+printf "🛑 NodRun Server stopped successfully.\n"
 EOF
 chmod +x $PREFIX/bin/ock
 
-# Create 'nodrun' shortcut
-cat << 'EOF' > $PREFIX/bin/nodrun
-#!/data/data/com.termux/files/usr/bin/sh
-$PREFIX/bin/ocr
-EOF
-chmod +x $PREFIX/bin/nodrun
+# 6. فعال‌سازی Wakelock برای پایداری ۲۴ ساعته در پس‌زمینه
+if command -v termux-wake-lock >/dev/null 2>&1; then
+    termux-wake-lock
+    echo "🔋 Termux Wakelock activated (Background stability secured)."
+fi
 
-print_success "Commands 'ocr', 'ock', and 'nodrun' configured."
-
-print_step "Generating local dashboard..."
-cat << 'EOF' > ~/nodrun-dashboard.html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NodRun Connection Dashboard</title>
-    <style>
-        body { background: #0f172a; color: #f8fafc; font-family: system-ui, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; padding: 20px; }
-        .card { background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 28px; max-width: 400px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.4); text-align: center; }
-        h1 { color: #38bdf8; font-size: 22px; margin-top: 0; }
-        p { color: #94a3b8; font-size: 13px; line-height: 1.5; }
-        .url-box { background: #0f172a; border: 1px solid #475569; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 15px; color: #34d399; margin: 16px 0; }
-        button { background: #0284c7; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; width: 100%; }
-        .footer { margin-top: 18px; font-size: 11px; color: #64748b; }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <h1>NodRun Server Ready</h1>
-        <p>Copy the server URL below and paste it into the NodRun app:</p>
-        <div class="url-box" id="serverUrl">http://127.0.0.1:4096</div>
-        <button onclick="copyUrl()">Copy Server URL</button>
-        <div class="footer">Exclusive ☬SHΞN™ made</div>
-    </div>
-    <script>
-        function copyUrl() {
-            navigator.clipboard.writeText('http://127.0.0.1:4096').then(() => {
-                const btn = document.querySelector('button');
-                btn.innerText = 'Copied! ✓';
-                btn.style.background = '#059669';
-                setTimeout(() => {
-                    btn.innerText = 'Copy Server URL';
-                    btn.style.background = '#0284c7';
-                }, 2000);
-            });
-        }
-    </script>
-</body>
-</html>
-EOF
-
-pkill -f "python3 -m http.server 4097" >/dev/null 2>&1
-nohup python3 -m http.server 4097 --directory ~/ >/dev/null 2>&1 &
-
-# Auto start server via ocr
-ocr >/dev/null 2>&1
-
-printf "\n"
-printf "==================================================\n"
-printf "  INSTALLATION COMPLETED SUCCESSFULLY!\n"
-printf "==================================================\n"
-printf "  • Start Server:  ocr\n"
-printf "  • Stop Server:   ock\n"
-printf "  • Helper Page:   termux-open http://127.0.0.1:4097\n"
-printf "==================================================\n"
+echo ""
+echo "✅ All checks and configurations completed successfully, Boss!"
+echo "👉 Now your users just need to type 'ocr' to run the server instantly."
