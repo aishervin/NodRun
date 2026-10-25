@@ -55,14 +55,15 @@ if [ -d "website" ]; then
     cp ~/global/health website/global/health
 fi
 
-# 5. ساخت دستورات میانبر اختصاصی ocr و ock
+# 5. ساخت دستورات میانبر اختصاصی ocr و ock (نسخه کامل برای رفع خطای سشن)
 echo "⚡ Creating global shortcuts (ocr & ock)..."
 
 cat << 'EOF' > $PREFIX/bin/ocr
 #!/data/data/com.termux/files/usr/bin/sh
-# پاکسازی پورت‌ها و پروسه‌های قبلی
+# پاکسازی کامل پورت‌ها و پروسه‌های قبلی برای جلوگیری از تداخل
 pkill -9 -f "http.server 4096" 2>/dev/null
 pkill -9 -f "ts-node" 2>/dev/null
+pkill -9 -f "node" 2>/dev/null
 fuser -k 4096/tcp 2>/dev/null
 sleep 0.5
 
@@ -72,16 +73,25 @@ if [ ! -d "$PROJECT_DIR" ]; then
     PROJECT_DIR="$PWD"
 fi
 
-# اجرای سرور (استفاده از پوشه website یا ریشه برای پایتون جهت سازگاری کامل با اپلیکیشن)
+# ۱. اجرای سرور پایتون برای فایل‌های استاتیک و مسیر سلامت
 SERVE_DIR="$PROJECT_DIR/website"
 if [ ! -d "$SERVE_DIR" ]; then
     SERVE_DIR="$PROJECT_DIR"
 fi
-
 nohup python3 -m http.server 4096 --directory "$SERVE_DIR" >/dev/null 2>&1 &
 
+# ۲. اجرای بک‌اند اصلی پروژه (Node.js / TypeScript) جهت مدیریت سشن‌ها
+cd "$PROJECT_DIR"
+if [ -f "package.json" ]; then
+    if grep -q "start" package.json; then
+        nohup npm start >/dev/null 2>&1 &
+    elif [ -f "src/index.ts" ] || [ -f "index.js" ]; then
+        nohup npx ts-node src/index.ts >/dev/null 2>&1 &
+    fi
+fi
+
 printf "\n==================================================\n"
-printf "🚀 NodRun Local Server is LIVE on port 4096!\n"
+printf "🚀 NodRun Engine & Session Server is LIVE on port 4096!\n"
 printf "📂 Serving from: $SERVE_DIR\n"
 printf "🔗 Health Check: http://127.0.0.1:4096/global/health\n"
 printf "==================================================\n"
@@ -92,6 +102,7 @@ cat << 'EOF' > $PREFIX/bin/ock
 #!/data/data/com.termux/files/usr/bin/sh
 pkill -9 -f "http.server 4096" 2>/dev/null
 pkill -9 -f "ts-node" 2>/dev/null
+pkill -9 -f "node" 2>/dev/null
 fuser -k 4096/tcp 2>/dev/null
 printf "🛑 NodRun Server stopped successfully.\n"
 EOF
