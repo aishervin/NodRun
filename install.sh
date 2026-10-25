@@ -1,108 +1,120 @@
-#!/bin/sh
+#!/data/data/com.termux/files/usr/bin/bash
+set -Eeuo pipefail
 
-echo "🚀 Scanning & Setting up ☬SHΞN™ NodRun Repository..."
+# NodRun Termux installer
+# Runs the actual OpenCode API server inside Alpine via proot-distro.
+# It intentionally does NOT use Python's static HTTP server on port 4096.
 
-# 1. بررسی و نصب پیش‌نیازهای پایه‌ای در ترموکس
-MISSING_PKGS=""
-for pkg in python3 nodejs git curl; do
-    if ! command -v $pkg >/dev/null 2>&1; then
-        MISSING_PKGS="$MISSING_PKGS $pkg"
-    fi
-done
-
-if [ -n "$MISSING_PKGS" ]; then
-    echo "📦 Installing missing packages:$MISSING_PKGS..."
-    pkg update -y >/dev/null 2>&1
-    pkg install -y python3 nodejs git curl cloudflared >/dev/null 2>&1
-else
-    echo "✔ Core packages (Python, Node, Git, Curl, Cloudflared) are ready."
-fi
-
-# 2. بررسی مخزن گیت و پوشه پروژه
-if [ -d ".git" ]; then
-    echo "🔄 Updating existing repository..."
-    git pull origin main >/dev/null 2>&1
-else
-    echo "📥 Cloning NodRun repository..."
-    git clone https://github.com/aishervin/NodRun.git ~/NodRun >/dev/null 2>&1
-    cd ~/NodRun
-fi
-
-# 3. نصب وابستگی‌های Node در صورت وجود package.json
-if [ -f "package.json" ]; then
-    echo "📦 Checking Node modules..."
-    if [ ! -d "node_modules" ]; then
-        npm install --silent >/dev/null 2>&1
-    else
-        echo "✔ Node modules already installed."
-    fi
-fi
-
-# 4. ساخت پوشه سلامت (Health Check) برای جلوگیری از خطاهای 404/530
-echo "🛠 Configuring API health endpoints..."
-mkdir -p ~/global
-cat << 'EOF' > ~/global/health
-{
-  "status": "ok",
-  "service": "NodRun Engine",
-  "version": "1.0.0"
-}
-EOF
-
-# اگر پوشه website یا public توی پروژه هست، فایل سلامت را آنجا هم کپی می‌کنیم تا سرور پایتون بدون مشکل پاسخ دهد
-if [ -d "website" ]; then
-    mkdir -p website/global
-    cp ~/global/health website/global/health
-fi
-
-# 5. ساخت دستورات میانبر اختصاصی ocr و ock
-echo "⚡ Creating global shortcuts (ocr & ock)..."
-
-cat << 'EOF' > $PREFIX/bin/ocr
-#!/data/data/com.termux/files/usr/bin/sh
-# پاکسازی پورت‌ها و پروسه‌های قبلی
-pkill -9 -f "http.server 4096" 2>/dev/null
-pkill -9 -f "ts-node" 2>/dev/null
-fuser -k 4096/tcp 2>/dev/null
-sleep 0.5
-
-# تعیین مسیر ریشه پروژه
+REPO_URL="https://github.com/aishervin/NodRun.git"
 PROJECT_DIR="$HOME/NodRun"
-if [ ! -d "$PROJECT_DIR" ]; then
-    PROJECT_DIR="$PWD"
+DISTRO="alpine"
+PORT="${NODRUN_PORT:-4096}"
+HOST="${NODRUN_HOST:-127.0.0.1}"
+
+say() { printf '\n[NodRun] %s\n' "$*"; }
+die() { say "ERROR: $*"; exit 1; }
+command -v pkg >/dev/null 2>&1 || die "Run this script from Termux, not inside Alpine or another shell."
+
+say "Checking Termux prerequisites..."
+pkg update -y
+pkg install -y proot-distro git curl
+
+if ! proot-distro list 2>/dev/null | grep -qiE '(^|[[:space:]])alpine([[:space:]]|$|\*)'; then
+  say "Installing Alpine Linux (first run can take a while)..."
+  proot-distro install "$DISTRO"
 fi
 
-# اجرای سرور (استفاده از پوشه website یا ریشه برای پایتون جهت سازگاری کامل با اپلیکیشن)
-SERVE_DIR="$PROJECT_DIR/website"
-if [ ! -d "$SERVE_DIR" ]; then
-    SERVE_DIR="$PROJECT_DIR"
+say "Preparing NodRun repository..."
+if [ -d "$PROJECT_DIR/.git" ]; then
+  git -C "$PROJECT_DIR" pull --ff-only origin main || say "Git update skipped; keeping the existing checkout."
+else
+  if [ -e "$PROJECT_DIR" ]; then
+    die "$PROJECT_DIR exists but is not a Git checkout. Move it aside or remove it, then rerun."
+  fi
+  git clone "$REPO_URL" "$PROJECT_DIR"
 fi
 
-nohup python3 -m http.server 4096 --directory "$SERVE_DIR" >/dev/null 2>&1 &
+say "Installing OpenCode and required packages inside Alpine..."
+proot-distro login "$DISTRO" -- sh -lc '
+  set -e
+  apk update
+  apk add --no-cache nodejs npm git curl bash ca-certificates
+  npm install -g opencode-ai
+  command -v opencode
+  opencode --version
+'
 
-printf "\n==================================================\n"
-printf "🚀 NodRun Local Server is LIVE on port 4096!\n"
-printf "📂 Serving from: $SERVE_DIR\n"
-printf "🔗 Health Check: http://127.0.0.1:4096/global/health\n"
-printf "==================================================\n"
+mkdir -p "$HOME/.config/nodrun"
+cat > "$HOME/.config/nodrun/server.env" <<EOF
+NODRUN_HOST="$HOST"
+NODRUN_PORT="$PORT"
 EOF
-chmod +x $PREFIX/bin/ocr
+chmod 600 "$HOME/.config/nodrun/server.env"
 
-cat << 'EOF' > $PREFIX/bin/ock
-#!/data/data/com.termux/files/usr/bin/sh
-pkill -9 -f "http.server 4096" 2>/dev/null
-pkill -9 -f "ts-node" 2>/dev/null
-fuser -k 4096/tcp 2>/dev/null
-printf "🛑 NodRun Server stopped successfully.\n"
+cat > "$PREFIX/bin/ocr" <<'EOF'
+#!/data/data/com.termux/files/usr/bin/bash
+set -u
+PORT="${NODRUN_PORT:-4096}"
+HOST="${NODRUN_HOST:-127.0.0.1}"
+LOG="$HOME/.nodrun-opencode.log"
+
+# Avoid killing unrelated services: stop only a previously recorded NodRun launcher.
+if [ -f "$HOME/.nodrun-opencode.pid" ]; then
+  oldpid="$(cat "$HOME/.nodrun-opencode.pid" 2>/dev/null || true)"
+  if [ -n "$oldpid" ] && kill -0 "$oldpid" 2>/dev/null; then
+    kill "$oldpid" 2>/dev/null || true
+    sleep 1
+  fi
+  rm -f "$HOME/.nodrun-opencode.pid"
+fi
+
+if curl --silent --show-error --max-time 2 "http://127.0.0.1:$PORT/" >/dev/null 2>&1; then
+  echo "Something is already listening on port $PORT."
+  echo "Check it before starting NodRun. Log: $LOG"
+  exit 1
+fi
+
+nohup proot-distro login alpine -- sh -lc "exec opencode serve --hostname '$HOST' --port '$PORT'" >>"$LOG" 2>&1 </dev/null &
+echo "$!" > "$HOME/.nodrun-opencode.pid"
+sleep 3
+
+if kill -0 "$(cat "$HOME/.nodrun-opencode.pid")" 2>/dev/null; then
+  echo "NodRun OpenCode server launch requested."
+  echo "URL: http://127.0.0.1:$PORT"
+  echo "Log: $LOG"
+  echo "If the app cannot connect, inspect the log and ensure the app uses this URL."
+else
+  echo "Server process exited. Recent log:"
+  tail -n 60 "$LOG" 2>/dev/null || true
+  exit 1
+fi
 EOF
-chmod +x $PREFIX/bin/ock
+chmod +x "$PREFIX/bin/ocr"
 
-# 6. فعال‌سازی Wakelock برای پایداری ۲۴ ساعته در پس‌زمینه
+cat > "$PREFIX/bin/ock" <<'EOF'
+#!/data/data/com.termux/files/usr/bin/bash
+set -u
+if [ -f "$HOME/.nodrun-opencode.pid" ]; then
+  pid="$(cat "$HOME/.nodrun-opencode.pid" 2>/dev/null || true)"
+  if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+    kill "$pid" 2>/dev/null || true
+    echo "Stop signal sent to NodRun launcher (PID $pid)."
+  else
+    echo "NodRun launcher is not running."
+  fi
+  rm -f "$HOME/.nodrun-opencode.pid"
+else
+  echo "No NodRun launcher PID file found."
+fi
+EOF
+chmod +x "$PREFIX/bin/ock"
+
 if command -v termux-wake-lock >/dev/null 2>&1; then
-    termux-wake-lock
-    echo "🔋 Termux Wakelock activated (Background stability secured)."
+  termux-wake-lock || true
 fi
 
-echo ""
-echo "✅ All checks and configurations completed successfully, Boss!"
-echo "👉 Now your users just need to type 'ocr' to run the server instantly."
+say "Installation completed."
+say "Start the actual OpenCode API server with: ocr"
+say "Stop the launcher with: ock"
+say "In NodRun, connect to: http://127.0.0.1:$PORT"
+say "Diagnostics: tail -n 100 ~/.nodrun-opencode.log"
