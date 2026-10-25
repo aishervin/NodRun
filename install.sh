@@ -49,7 +49,7 @@ cat << 'EOF' > ~/global/health
 }
 EOF
 
-# 5. ساخت دستورات میانبر اختصاصی ocr و ock
+# 5. ساخت دستورات میانبر اختصاصی ocr و ock با قابلیت لاگ‌گیری دقیق
 echo "⚡ Creating global shortcuts (ocr & ock)..."
 
 cat << 'EOF' > $PREFIX/bin/ocr
@@ -67,16 +67,21 @@ fi
 cd "$PROJECT_DIR"
 export PORT=4096
 
+# اجرای سرور و ذخیره خروجی لاگ برای بررسی خطای احتمالی
+echo "Starting server..." > ~/nodrun.log
 if grep -q "start" package.json; then
-    nohup npm start >/dev/null 2>&1 &
+    nohup npm start > ~/nodrun.log 2>&1 &
 elif [ -f "src/index.ts" ]; then
-    nohup npx ts-node src/index.ts >/dev/null 2>&1 &
+    nohup npx ts-node src/index.ts > ~/nodrun.log 2>&1 &
 else
-    nohup node index.js >/dev/null 2>&1 &
+    nohup node index.js > ~/nodrun.log 2>&1 &
 fi
 
+sleep 2
+
 printf "\n==================================================\n"
-printf "🚀 NodRun Engine is LIVE directly on port 4096!\n"
+printf "🚀 NodRun Engine Triggered on port 4096!\n"
+printf "📄 Check logs if needed: cat ~/nodrun.log\n"
 printf "🔗 Health Check: http://127.0.0.1:4096/global/health\n"
 printf "==================================================\n"
 EOF
