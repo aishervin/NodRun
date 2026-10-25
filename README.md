@@ -60,6 +60,16 @@ NodRun Mobile is a React Native / Expo app that brings the power of the [opencod
 
 **Don't have a server yet?** Install the app and tap **Try a Demo** on the Sessions screen first — no setup required. It plays back a scripted bug-fix session through the app's real chat, diff, and permission-approval UI, offline, in about 30 seconds.
 
+**Termux one-command setup (Android)**
+
+Open Termux and run this command. It installs/repairs the required packages and Alpine environment, installs OpenCode, verifies the API, and attempts to start the server automatically. Re-running it is supported:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/aishervin/NodRun/main/install.sh -o "$HOME/nodrun-install.sh" && bash "$HOME/nodrun-install.sh"
+```
+
+Then connect NodRun to `http://127.0.0.1:4096`. The installer does not download or install the NodRun APK; get the app from [Latest APK release](https://github.com/aishervin/NodRun/releases/latest). First setup downloads Alpine packages and may use several hundred MiB. It does not delete a broken Alpine environment automatically, because that could destroy existing data.
+
 **Step 1 — Start opencode on your machine**
 
 ```bash
