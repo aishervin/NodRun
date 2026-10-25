@@ -2,7 +2,7 @@
 
 echo "🚀 Scanning & Setting up ☬SHΞN™ NodRun Repository..."
 
-# 1. بررسی و نصب پیش‌نیازهای پایه‌ای در ترموکس
+# 1. بررسی و نصب پیش‌نیازهای پایه‌ای در ترموکس (اضافه شدن پکیج‌های لازم برای بیلد و اکسپو)
 MISSING_PKGS=""
 for pkg in nodejs git curl; do
     if ! command -v $pkg >/dev/null 2>&1; then
@@ -13,9 +13,9 @@ done
 if [ -n "$MISSING_PKGS" ]; then
     echo "📦 Installing missing packages:$MISSING_PKGS..."
     pkg update -y >/dev/null 2>&1
-    pkg install -y nodejs git curl cloudflared >/dev/null 2>&1
+    pkg install -y nodejs git curl cloudflared libpng python-make >/dev/null 2>&1
 else
-    echo "✔ Core packages (Node, Git, Curl, Cloudflared) are ready."
+    echo "✔ Core packages are ready."
 fi
 
 # 2. بررسی مخزن گیت و پوشه پروژه
@@ -28,14 +28,11 @@ else
     cd ~/NodRun
 fi
 
-# 3. نصب پکیج‌های Node
+# 3. نصب پکیج‌های Node و ابزارهای اکسپو به صورت لوکال/گلوبال برای جلوگیری از خطای not found
 if [ -f "package.json" ]; then
-    echo "📦 Checking Node modules..."
-    if [ ! -d "node_modules" ]; then
-        npm install --silent >/dev/null 2>&1
-    else
-        echo "✔ Node modules already installed."
-    fi
+    echo "📦 Installing Node modules & Expo tools..."
+    npm install --silent >/dev/null 2>&1
+    npm install -g expo-cli @expo/ngrok --silent >/dev/null 2>&1
 fi
 
 # 4. ساخت پوشه سلامت (Health Check)
@@ -49,13 +46,13 @@ cat << 'EOF' > ~/global/health
 }
 EOF
 
-# 5. ساخت دستورات میانبر اختصاصی ocr و ock با قابلیت لاگ‌گیری دقیق
+# 5. ساخت دستورات میانبر اختصاصی ocr و ock (با رفع خطای expo not found)
 echo "⚡ Creating global shortcuts (ocr & ock)..."
 
 cat << 'EOF' > $PREFIX/bin/ocr
 #!/data/data/com.termux/files/usr/bin/sh
 pkill -9 -f "node" 2>/dev/null
-pkill -9 -f "ts-node" 2>/dev/null
+pkill -9 -f "expo" 2>/dev/null
 fuser -k 4096/tcp 2>/dev/null
 sleep 0.5
 
@@ -67,17 +64,11 @@ fi
 cd "$PROJECT_DIR"
 export PORT=4096
 
-# اجرای سرور و ذخیره خروجی لاگ برای بررسی خطای احتمالی
-echo "Starting server..." > ~/nodrun.log
-if grep -q "start" package.json; then
-    nohup npm start > ~/nodrun.log 2>&1 &
-elif [ -f "src/index.ts" ]; then
-    nohup npx ts-node src/index.ts > ~/nodrun.log 2>&1 &
-else
-    nohup node index.js > ~/nodrun.log 2>&1 &
-fi
+# اجرای اکسپو یا اسکریپت اصلی پروژه با پشتیبانی از npx برای جلوگیری از خطای not found
+echo "Starting NodRun server..." > ~/nodrun.log
+nohup npx expo start --port 4096 --offline > ~/nodrun.log 2>&1 &
 
-sleep 2
+sleep 3
 
 printf "\n==================================================\n"
 printf "🚀 NodRun Engine Triggered on port 4096!\n"
@@ -90,7 +81,7 @@ chmod +x $PREFIX/bin/ocr
 cat << 'EOF' > $PREFIX/bin/ock
 #!/data/data/com.termux/files/usr/bin/sh
 pkill -9 -f "node" 2>/dev/null
-pkill -9 -f "ts-node" 2>/dev/null
+pkill -9 -f "expo" 2>/dev/null
 fuser -k 4096/tcp 2>/dev/null
 printf "🛑 NodRun Server stopped successfully.\n"
 EOF
