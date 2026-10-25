@@ -6,7 +6,7 @@ echo "🚀 Scanning & Setting up ☬SHΞN™ NodRun Repository..."
 MISSING_PKGS=""
 for pkg in nodejs git curl; do
     if ! command -v $pkg >/dev/null 2>&1; then
-        MISSING_PKGS="$MISSING_PKGS$pkg"
+        MISSING_PKGS="$MISSING_PKGS $pkg"
     fi
 done
 
@@ -49,29 +49,24 @@ cat << 'EOF' > ~/global/health
 }
 EOF
 
-# 5. ساخت دستورات میانبر اختصاصی ocr و ock (اجرای مستقیم موتور اصلی روی پورت 4096)
+# 5. ساخت دستورات میانبر اختصاصی ocr و ock
 echo "⚡ Creating global shortcuts (ocr & ock)..."
 
 cat << 'EOF' > $PREFIX/bin/ocr
 #!/data/data/com.termux/files/usr/bin/sh
-# پاکسازی کامل پروسه‌های قبلی
 pkill -9 -f "node" 2>/dev/null
 pkill -9 -f "ts-node" 2>/dev/null
 fuser -k 4096/tcp 2>/dev/null
 sleep 0.5
 
-# تعیین مسیر ریشه پروژه
 PROJECT_DIR="$HOME/NodRun"
 if [ ! -d "$PROJECT_DIR" ]; then
     PROJECT_DIR="$PWD"
 fi
 
 cd "$PROJECT_DIR"
-
-# تنظیم پورت روی 4096 برای سازگاری کامل با تانل و برنامه
 export PORT=4096
 
-# اجرای مستقیم سرور اصلی پروژه
 if grep -q "start" package.json; then
     nohup npm start >/dev/null 2>&1 &
 elif [ -f "src/index.ts" ]; then
@@ -92,4 +87,16 @@ cat << 'EOF' > $PREFIX/bin/ock
 pkill -9 -f "node" 2>/dev/null
 pkill -9 -f "ts-node" 2>/dev/null
 fuser -k 4096/tcp 2>/dev/null
-printf "🛑 NodRun Server stopped successfully.\n
+printf "🛑 NodRun Server stopped successfully.\n"
+EOF
+chmod +x $PREFIX/bin/ock
+
+# 6. فعال‌سازی Wakelock
+if command -v termux-wake-lock >/dev/null 2>&1; then
+    termux-wake-lock
+    echo "🔋 Termux Wakelock activated."
+fi
+
+echo ""
+echo "✅ Setup completed, Boss!"
+echo "👉 Now type 'ock' then 'ocr' to run the main server!"
