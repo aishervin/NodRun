@@ -169,6 +169,19 @@ export default function ConnectionsScreen() {
                 </Text>
               </TouchableOpacity>
             </View>
+            <TouchableOpacity
+              style={[styles.engineButton, isDark && styles.engineButtonDark]}
+              onPress={() => router.push("/engine")}
+              accessibilityRole="button"
+              testID="open-local-engine-manager"
+            >
+              <Ionicons name="hardware-chip-outline" size={20} color={isDark ? "#ffffff" : "#111111"} />
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={[styles.termuxTitle, isDark && styles.textDark]}>Manage OpenCode on this phone</Text>
+                <Text style={[styles.termuxHint, isDark && styles.metaDark]}>Install, start, stop and repair the local engine from NodRun</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={isDark ? "#888888" : "#666666"} />
+            </TouchableOpacity>
           </View>
         }
         ListFooterComponent={
@@ -254,6 +267,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
   },
   termuxCardDark: { backgroundColor: "#1a1a1a" },
+  engineButton: { flexDirection: "row", alignItems: "center", gap: 10, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: "#e5e5e5", backgroundColor: "#ffffff" },
+  engineButtonDark: { borderColor: "#2a2a2a", backgroundColor: "#111111" },
   termuxDescription: { flex: 1, gap: 3 },
   termuxTitle: { fontSize: 14, fontWeight: "600", color: "#0a0a0a" },
   termuxHint: { fontSize: 12, lineHeight: 17, color: "#666666" },
