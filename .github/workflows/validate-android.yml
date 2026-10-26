@@ -31,4 +31,8 @@ jobs:
         working-directory: android
         run: |
           chmod +x ./gradlew
+          keytool -genkeypair -v -storepass android -keypass android \
+            -keystore app/debug.keystore -alias androiddebugkey \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
           ./gradlew --no-daemon assembleDebug
